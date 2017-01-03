@@ -5,6 +5,7 @@ services:
   # Takes care of writing metrics to database and data retention
   go-carbon:
     container_name: go-carbon
+    hostname: go-carbon
     image: go-carbon
     build:
       dockerfile: go-carbon.dockerfile
@@ -16,14 +17,14 @@ services:
 
   # Graphite API (yep, almost original Graphite Web)
   # Provides API for reading metrics
-  graphite-api:
-    container_name: graphite-api
-    image: brutasse/graphite-api:latest
-    environment:
-      GRAPHITE_API_CONFIG: /etc/graphite-api/graphite-api.yaml
-    volumes:
-      - ./configs:/etc/graphite-api
-      - ./whisper:/data/graphite/whisper
+  carbonapi:
+    container_name: carbonapi
+    hostname: carbonapi
+    image: carbonapi
+    build:
+      dockerfile: carbonapi.dockerfile
+      context: .
+    command: -z=http://go-carbon:8080 -graphite=go-carbon:2003 -stdout
     depends_on:
       - go-carbon
 
@@ -39,4 +40,4 @@ services:
       - ./grafana:/var/lib/grafana
       - ./logs:/var/log/grafana
     depends_on:
-      - graphite-api
+      - carbonapi
