@@ -9,7 +9,7 @@ ENV GOPATH=/opt/go
 RUN apt-get update && apt-get -y install git golang && \
  go get -d github.com/dgryski/carbonapi && \
  cd ${GOPATH}/src/github.com/dgryski/carbonapi && \
- go build && mv carbonapi /usr/sbin/ && cd / && \
+ go build -v && mv carbonapi /usr/sbin/ && cd / && \
  apt-get -y purge golang git && apt -y autoremove && rm -rf ${GOPATH}
 
 EXPOSE 8080
