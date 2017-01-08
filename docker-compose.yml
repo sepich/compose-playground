@@ -15,8 +15,7 @@ services:
       - ./configs:/etc/go-carbon
       - ./whisper:/data/graphite/whisper/
 
-  # Graphite API (yep, almost original Graphite Web)
-  # Provides API for reading metrics
+  # Graphite API provides API for reading metrics
   carbonapi:
     container_name: carbonapi
     hostname: carbonapi
@@ -28,8 +27,7 @@ services:
     depends_on:
       - go-carbon
 
-  # Grafana
-  # Metrics dashboard
+  # Grafana metrics dashboard
   grafana:
     container_name: grafana
     image: grafana/grafana
@@ -41,3 +39,20 @@ services:
       - ./logs:/var/log/grafana
     depends_on:
       - carbonapi
+
+  # Diamond python metrics collector
+  diamond:
+    image: mateuszm/diamond
+    container_name: diamond
+    hostname: diamond
+    environment:
+      - GRAPHITE_HOST=go-carbon
+      - GRAPHITE_PORT=2003
+      - PATH_PREFIX=server
+      - INTERVAL=5
+    volumes:
+      - ./configs:/etc/diamond
+      # pass-trough volumes to collect containters stats from host
+      # - /proc:/host_proc:ro
+      # - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - /dev:/dev:ro
