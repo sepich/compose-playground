@@ -1,7 +1,7 @@
 # Graphite playground
 This is docker-compose folder, enabling you to quickly set-up and play with different components of Graphite monitoring stack.
 
-It consists of:  
+#### Components:  
  - [Diamond](https://github.com/python-diamond/Diamond), python daemon that collects system metrics (client sends metrics to graphite)
  - [Go-carbon](https://github.com/lomik/go-carbon), Golang implementation of Graphite/Carbon server (receives and writes metriс to disk)
  - [Carbonapi](https://github.com/dgryski/carbonapi), Golang implementation of Graphite API server (provides REST API for reading metrics for grafana etc)
@@ -28,3 +28,24 @@ docker-compose stop
 docker-compose rm -f
 ```
 
+#### To scale:
+This is minimal number of components, real scalable architecture would be like:  
+https://github.com/lomik/go-carbon/issues/130
+```
+                     |-----------------|
+                     | carbon-relay-ng |
+                     |-----------------|
+                              |
+        |---------------------+---------------------|
+|-----------------|  |-----------------|  |-----------------|
+|    go-carbon    |  |    go-carbon    |  |    go-carbon    |
+| (carbonserver)  |  | (carbonserver)  |  | (carbonserver)  |
+|-----------------|  |-----------------|  |-----------------|
+        |---------------------+---------------------|
+                              |
+                     |-----------------|
+                     |  carbonzipper   |
+                     |    carbonapi    |
+                     |     grafana     |
+                     |-----------------|
+```
