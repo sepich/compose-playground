@@ -1,0 +1,8 @@
+[{
+    "hashring": "soft-tenants",
+    "endpoints": [
+        "thanos-receive-0:10901",
+        "thanos-receive-1:10901",
+        "thanos-receive-2:10901"
+    ]
+}]
