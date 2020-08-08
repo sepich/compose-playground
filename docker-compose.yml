@@ -4,7 +4,7 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanosio/thanos:v0.14.0-rc.0
+    image: thanosio/thanos:v0.14.0
     command:
       - receive
       - --tsdb.path=/data
@@ -23,7 +23,7 @@ services:
   thanos-receive-1:
     container_name: thanos-receive-1
     hostname: thanos-receive-1
-    image: thanosio/thanos:v0.14.0-rc.0
+    image: thanosio/thanos:v0.14.0
     command:
       - receive
       - --tsdb.path=/data
@@ -42,7 +42,7 @@ services:
   thanos-receive-2:
     container_name: thanos-receive-2
     hostname: thanos-receive-2
-    image: thanosio/thanos:v0.14.0-rc.0
+    image: thanosio/thanos:v0.14.0
     command:
       - receive
       - --tsdb.path=/data
@@ -61,7 +61,7 @@ services:
   thanos-front:
     container_name: thanos-front
     hostname: thanos-front
-    image: thanosio/thanos:v0.14.0-rc.0
+    image: thanosio/thanos:v0.14.0
     command:
       - receive
       - --tsdb.path=/data
@@ -78,7 +78,7 @@ services:
   thanos-query:
     container_name: thanos-query
     hostname: thanos-query
-    image: thanosio/thanos:v0.14.0-rc.0
+    image: thanosio/thanos:v0.14.0
     command:
       - query
       - --query.auto-downsampling
