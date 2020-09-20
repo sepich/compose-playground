@@ -4,17 +4,15 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanosio/thanos:v0.14.0
+    image: thanosio/thanos:v0.15.0
     command:
       - receive
       - --tsdb.path=/data
       - --tsdb.retention=1d
-      - --tsdb.min-block-duration=30m  # have to be >2x(prometheus side 15m), https://github.com/thanos-io/thanos/issues/2114
-      - --tsdb.max-block-duration=30m
       - --label=replica="thanos-receive-0"
       - --receive.local-endpoint=thanos-receive-0:10901
       - --receive.hashrings-file=/cfg/hashrings.json
-      - --receive.replication-factor=3
+      - --receive.replication-factor=2
     volumes:
       - ./cfg/hashrings.json:/cfg/hashrings.json
       - ./data/thanos-receive-0:/data
@@ -23,62 +21,24 @@ services:
   thanos-receive-1:
     container_name: thanos-receive-1
     hostname: thanos-receive-1
-    image: thanosio/thanos:v0.14.0
+    image: thanosio/thanos:v0.15.0
     command:
       - receive
       - --tsdb.path=/data
       - --tsdb.retention=1d
-      - --tsdb.min-block-duration=30m  # have to be >2x(prometheus side 15m), https://github.com/thanos-io/thanos/issues/2114
-      - --tsdb.max-block-duration=30m
       - --label=replica="thanos-receive-1"
       - --receive.local-endpoint=thanos-receive-1:10901
       - --receive.hashrings-file=/cfg/hashrings.json
-      - --receive.replication-factor=3
+      - --receive.replication-factor=2
     volumes:
       - ./cfg/hashrings.json:/cfg/hashrings.json
       - ./data/thanos-receive-1:/data
     user: '65534'
 
-  thanos-receive-2:
-    container_name: thanos-receive-2
-    hostname: thanos-receive-2
-    image: thanosio/thanos:v0.14.0
-    command:
-      - receive
-      - --tsdb.path=/data
-      - --tsdb.retention=1d
-      - --tsdb.min-block-duration=30m  # have to be >2x(prometheus side 15m), https://github.com/thanos-io/thanos/issues/2114
-      - --tsdb.max-block-duration=30m
-      - --label=replica="thanos-receive-2"
-      - --receive.local-endpoint=thanos-receive-2:10901
-      - --receive.hashrings-file=/cfg/hashrings.json
-      - --receive.replication-factor=3
-    volumes:
-      - ./cfg/hashrings.json:/cfg/hashrings.json
-      - ./data/thanos-receive-2:/data
-    user: '65534'
-
-  thanos-front:
-    container_name: thanos-front
-    hostname: thanos-front
-    image: thanosio/thanos:v0.14.0
-    command:
-      - receive
-      - --tsdb.path=/data
-      - --receive.local-endpoint=thanos-front:10901
-      - --receive.hashrings-file=/cfg/hashrings.json
-      - --receive.replication-factor=3
-      - --receive-forward-timeout=1s
-      - --log.level=debug
-    volumes:
-      - ./cfg/hashrings.json:/cfg/hashrings.json
-      - ./data/thanos-front:/data
-    user: '65534'
-
   thanos-query:
     container_name: thanos-query
     hostname: thanos-query
-    image: thanosio/thanos:v0.14.0
+    image: thanosio/thanos:v0.15.0
     command:
       - query
       - --query.auto-downsampling
@@ -87,7 +47,6 @@ services:
       - --query.replica-label=tenant_id
       - --store=dns+thanos-receive-0:10901
       - --store=dns+thanos-receive-1:10901
-      - --store=dns+thanos-receive-2:10901
     user: '65534'
     ports:
     - 10902:10902
@@ -110,43 +69,10 @@ services:
     ports:
     - '9090:9090'
 
-  node-exporter:
-    container_name: node-exporter
-    hostname: node-exporter
-    image: prom/node-exporter
-    # network_mode: host
-    ports:
-    - '9100:9100'
-
-  avalanche-1:
-    container_name: avalanche-1
-    hostname: avalanche-1
-    image: quay.io/freshtracks.io/avalanche:latest
-    command:
-      - --metric-count=3000
-      - --series-interval=3600
-      - --metric-interval=7200
-  avalanche-2:
-    container_name: avalanche-2
-    hostname: avalanche-2
-    image: quay.io/freshtracks.io/avalanche:latest
-    command:
-      - --metric-count=3000
-      - --series-interval=3600
-      - --metric-interval=7200
-  avalanche-3:
-    container_name: avalanche-3
-    hostname: avalanche-3
-    image: quay.io/freshtracks.io/avalanche:latest
-    command:
-      - --metric-count=3000
-      - --series-interval=3600
-      - --metric-interval=7200
-
   grafana:
     container_name: grafana
     hostname: grafana
-    image: grafana/grafana:7.0.3
+    image: grafana/grafana:7.1.0
     entrypoint:
       - /usr/share/grafana/bin/grafana-server
       - --homepath=/usr/share/grafana

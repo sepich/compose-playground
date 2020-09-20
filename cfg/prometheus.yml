@@ -5,7 +5,7 @@ global:
     prometheus: compose-test-1
 
 remote_write:
-  - url: http://thanos-front:19291/api/v1/receive
+  - url: http://thanos-receive-0:19291/api/v1/receive
 
 scrape_configs:
 
@@ -18,20 +18,3 @@ scrape_configs:
       - targets:
         - thanos-receive-0:10902
         - thanos-receive-1:10902
-        - thanos-receive-2:10902
-
-  - job_name: thanos-front
-    static_configs:
-      - targets:
-        - thanos-front:10902
-
-  - job_name: node-exporter
-    static_configs:
-      - targets: [node-exporter:9100]
-
-  - job_name: avalanche
-    static_configs:
-      - targets:
-        - avalanche-1:9001
-        - avalanche-2:9001
-        - avalanche-3:9001
