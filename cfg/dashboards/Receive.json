@@ -778,7 +778,7 @@
       },
       "hiddenSeries": false,
       "id": 37,
-      "interval": "15s",
+      "interval": "5s",
       "legend": {
         "avg": false,
         "current": false,
@@ -816,7 +816,7 @@
         {
           "expr": "sum(rate(http_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(handler,code)",
           "format": "time_series",
-          "interval": "30s",
+          "interval": "10s",
           "legendFormat": "{{handler}}/{{code}}",
           "refId": "A"
         }
@@ -915,7 +915,7 @@
       "targets": [
         {
           "expr": "avg(rate(process_cpu_seconds_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(instance)",
-          "interval": "30s",
+          "interval": "10s",
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
@@ -1016,7 +1016,7 @@
       "targets": [
         {
           "expr": "sum(rate(grpc_server_handled_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(grpc_code,grpc_method)",
-          "interval": "30s",
+          "interval": "10s",
           "legendFormat": "{{grpc_method}}/{{grpc_code}}",
           "refId": "A"
         }
@@ -1214,7 +1214,7 @@
       "targets": [
         {
           "expr": "sum(job:metrics:count) by(prometheus)",
-          "interval": "30s",
+          "interval": "10s",
           "legendFormat": "{{prometheus}}",
           "refId": "A"
         }
@@ -1437,7 +1437,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(rate(prometheus_tsdb_head_samples_appended_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(instance) >0",
+          "expr": "sum(rate(prometheus_tsdb_head_samples_appended_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(instance) >0",
           "format": "time_series",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -1541,7 +1541,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(prometheus_tsdb_head_chunks{prometheus=~\"$prometheus\", instance=~\"$instance\"})by(instance) >0",
+          "expr": "sum(prometheus_tsdb_head_chunks{prometheus=~\"$prometheus\", instance=~\"$instance\"})by(instance) >0",
           "format": "time_series",
           "legendFormat": "chunks: {{instance}}",
           "refId": "A"
@@ -1645,7 +1645,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg(prometheus_tsdb_head_series{prometheus=~\"$prometheus\", instance=~\"$instance\"})by(instance) >0",
+          "expr": "sum(prometheus_tsdb_head_series{prometheus=~\"$prometheus\", instance=~\"$instance\"})by(instance) >0",
           "format": "time_series",
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -1813,7 +1813,7 @@
             {
               "expr": "8*sum(rate(http_request_size_bytes_sum{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(code)",
               "format": "time_series",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "{{code}}",
               "refId": "A"
             }
@@ -1967,9 +1967,9 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "avg(rate(http_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\", code=\"200\"}[$__interval]))by(instance)\n/\nsum(rate(http_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(instance)",
+              "expr": "sum(rate(http_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\", code=\"200\"}[$__interval]))by(instance)\n/\nsum(rate(http_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(instance)",
               "format": "time_series",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "{{instance}}",
               "refId": "A"
             }
@@ -2157,9 +2157,9 @@
           "steppedLine": false,
           "targets": [
             {
-              "expr": "avg(rate(thanos_receive_forward_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(result)",
+              "expr": "sum(rate(thanos_receive_forward_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(result)",
               "format": "time_series",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "{{result}}",
               "refId": "A"
             }
@@ -2509,13 +2509,13 @@
           "targets": [
             {
               "expr": "avg(go_goroutines{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "goroutines",
               "refId": "B"
             },
             {
               "expr": "avg(go_threads{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "threads",
               "refId": "A"
             }
@@ -2979,13 +2979,13 @@
           "targets": [
             {
               "expr": "avg(go_goroutines{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "goroutines",
               "refId": "B"
             },
             {
               "expr": "avg(go_threads{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "threads",
               "refId": "A"
             }
@@ -3454,13 +3454,13 @@
           "targets": [
             {
               "expr": "avg(go_goroutines{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "goroutines",
               "refId": "B"
             },
             {
               "expr": "avg(go_threads{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "threads",
               "refId": "A"
             }
@@ -3929,13 +3929,13 @@
           "targets": [
             {
               "expr": "avg(go_goroutines{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "goroutines",
               "refId": "B"
             },
             {
               "expr": "avg(go_threads{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "threads",
               "refId": "A"
             }
@@ -4404,13 +4404,13 @@
           "targets": [
             {
               "expr": "avg(go_goroutines{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "goroutines",
               "refId": "B"
             },
             {
               "expr": "avg(go_threads{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "threads",
               "refId": "A"
             }
@@ -4879,13 +4879,13 @@
           "targets": [
             {
               "expr": "avg(go_goroutines{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "goroutines",
               "refId": "B"
             },
             {
               "expr": "avg(go_threads{prometheus=\"$prometheus\", instance=~\"$instance\"})",
-              "interval": "30s",
+              "interval": "10s",
               "legendFormat": "threads",
               "refId": "A"
             }
@@ -5090,14 +5090,14 @@
           ]
         },
         "datasource": "Thanos",
-        "definition": "label_values(thanos_receive_config_hash{prometheus=~\"$prometheus\"}, instance)",
+        "definition": "label_values(thanos_receive_replication_factor{prometheus=~\"$prometheus\"}, instance)",
         "hide": 0,
         "includeAll": true,
         "label": null,
         "multi": true,
         "name": "instance",
         "options": [],
-        "query": "label_values(thanos_receive_config_hash{prometheus=~\"$prometheus\"}, instance)",
+        "query": "label_values(thanos_receive_replication_factor{prometheus=~\"$prometheus\"}, instance)",
         "refresh": 2,
         "regex": "",
         "skipUrlSync": false,
@@ -5116,7 +5116,7 @@
   },
   "timepicker": {
     "refresh_intervals": [
-      "15s",
+      "5s",
       "30s",
       "1m",
       "5m",

@@ -2472,7 +2472,7 @@
       "type": "row"
     }
   ],
-  "refresh": "15s",
+  "refresh": "5s",
   "schemaVersion": 25,
   "style": "dark",
   "tags": [],
@@ -2538,7 +2538,7 @@
   },
   "timepicker": {
     "refresh_intervals": [
-      "15s",
+      "5s",
       "30s",
       "1m",
       "5m",

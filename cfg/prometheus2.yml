@@ -2,7 +2,7 @@ global:
   scrape_interval: 5s
   evaluation_interval: 1m
   external_labels:
-    prometheus: compose-test-1
+    prometheus: compose-test-2
     stage: dev
 
 remote_write:
@@ -18,12 +18,16 @@ scrape_configs:
     static_configs:
       - targets: [localhost:9090]
 
-  - job_name: thanos-receive
+  - job_name: avalanche
     static_configs:
       - targets:
-        - thanos-receive-0:10902
-        - thanos-receive-1:10902
+          - avalanche-1:9001
+          - avalanche-2:9001
+          - avalanche-3:9001
 
-  - job_name: node-exporter
+  - job_name: avalanche2
     static_configs:
-      - targets: [node-exporter:9100]
+      - targets:
+          - avalanche-1:9001
+          - avalanche-2:9001
+          - avalanche-3:9001
