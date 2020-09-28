@@ -814,10 +814,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(handler,code)",
+          "expr": "sum(rate(http_requests_total{prometheus=~\"$prometheus\", instance=~\"$instance\"}[$__interval]))by(handler,code,instance)",
           "format": "time_series",
           "interval": "10s",
-          "legendFormat": "{{handler}}/{{code}}",
+          "legendFormat": "{{instance}}/{{handler}}/{{code}}",
           "refId": "A"
         }
       ],
@@ -5111,7 +5111,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {

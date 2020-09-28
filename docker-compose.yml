@@ -1,10 +1,19 @@
 version: '2.4'
 services:
 
+  nginx:
+    container_name: nginx
+    hostname: nginx
+    image: nginx
+    volumes:
+    - ./cfg/nginx.conf:/etc/nginx/nginx.conf
+    - ./data/nginx:/var/cache/nginx
+    user: '33'
+
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanos #io/thanos:v0.15.0
+    image: thanosio/thanos:v0.15.0
     command:
       - receive
       - --tsdb.path=/data
@@ -12,16 +21,9 @@ services:
       - --tsdb.min-block-duration=30m
       - --tsdb.max-block-duration=30m
       - --label=replica="thanos-receive-0"
-#      - --receive.local-endpoint=thanos-receive-0:10901
+      - --receive.local-endpoint=thanos-receive-0:10901
 #      - --receive.hashrings-file=/cfg/hashrings.json
 #      - --receive.replication-factor=2
-      - --receive.extract-tenant
-      - --receive.tenant-label-name=prometheus
-      - --receive.extract-label=stage
-      - |
-        --objstore.config=type: FILESYSTEM
-        config:
-          directory: "/s3"
     volumes:
       - ./cfg/hashrings.json:/cfg/hashrings.json
       - ./data/thanos-receive-0:/data
@@ -30,32 +32,25 @@ services:
     ports:
       - 10900:10902  # pprof
 
-#  thanos-receive-1:
-#    container_name: thanos-receive-1
-#    hostname: thanos-receive-1
-#    image: thanos #io/thanos:v0.15.0
-#    command:
-#      - receive
-#      - --tsdb.path=/data
-#      - --tsdb.retention=1d
-#      - --tsdb.min-block-duration=30m
-#      - --tsdb.max-block-duration=30m
-#      - --label=replica="thanos-receive-1"
-#      - --receive.local-endpoint=thanos-receive-1:10901
+  thanos-receive-1:
+    container_name: thanos-receive-1
+    hostname: thanos-receive-1
+    image: thanosio/thanos:v0.15.0
+    command:
+      - receive
+      - --tsdb.path=/data
+      - --tsdb.retention=1d
+      - --tsdb.min-block-duration=30m
+      - --tsdb.max-block-duration=30m
+      - --label=replica="thanos-receive-1"
+      - --receive.local-endpoint=thanos-receive-1:10901
 #      - --receive.hashrings-file=/cfg/hashrings.json
 #      - --receive.replication-factor=2
-#      - --receive.extract-tenant
-#      - --receive.tenant-label-name=prometheus
-#      - --receive.extract-label=stage
-#      - |
-#        --objstore.config=type: FILESYSTEM
-#        config:
-#          directory: "/s3"
-#    volumes:
-#      - ./cfg/hashrings.json:/cfg/hashrings.json
-#      - ./data/thanos-receive-1:/data
-#      - ./data/s3:/s3
-#    user: '65534'
+    volumes:
+      - ./cfg/hashrings.json:/cfg/hashrings.json
+      - ./data/thanos-receive-1:/data
+      - ./data/s3:/s3
+    user: '65534'
 
   thanos-query:
     container_name: thanos-query
@@ -68,7 +63,7 @@ services:
       - --query.replica-label=replica
       - --query.replica-label=tenant_id
       - --store=dns+thanos-receive-0:10901
-#      - --store=dns+thanos-receive-1:10901
+      - --store=dns+thanos-receive-1:10901
     user: '65534'
     ports:
     - 10902:10902
@@ -90,24 +85,6 @@ services:
     user: '65534'
     ports:
     - '9090:9090'
-
-  prometheus2:
-    container_name: prometheus2
-    hostname: prometheus2
-    image: prom/prometheus
-    command:
-      - --web.enable-lifecycle
-      - --config.file=/cfg/prometheus2.yml
-      - --storage.tsdb.path=/data
-      - --storage.tsdb.retention.time=15m
-      - --storage.tsdb.min-block-duration=15m
-      - --storage.tsdb.max-block-duration=15m
-    volumes:
-      - ./cfg/prometheus2.yml:/cfg/prometheus2.yml
-      - ./data/prometheus2:/data
-    user: '65534'
-    ports:
-    - '9091:9090'
 
   grafana:
     container_name: grafana
