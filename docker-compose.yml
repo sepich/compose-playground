@@ -4,63 +4,107 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanos #io/thanos:v0.15.0
+    image: thanos #sepa/thanos:v0.20.0
     command:
       - receive
       - --tsdb.path=/data
       - --tsdb.retention=1d
-      - --tsdb.min-block-duration=30m
-      - --tsdb.max-block-duration=30m
+      - --tsdb.allow-overlapping-blocks
+      - --tsdb.min-block-duration=5m
+      - --tsdb.max-block-duration=5m
       - --label=replica="thanos-receive-0"
-#      - --receive.local-endpoint=thanos-receive-0:10901
-#      - --receive.hashrings-file=/cfg/hashrings.json
-#      - --receive.replication-factor=2
-      - --receive.extract-tenant
+      - --receive.local-endpoint=thanos-receive-0:10901
+      - --receive.hashrings-file=/cfg/hashrings.json
+      - --receive.replication-factor=2
       - --receive.tenant-label-name=prometheus
-      - --receive.extract-label=stage
+      - --receive.extract-labels-config-file=/cfg/extract.yml
+      - --log.level=debug
+      # ~/Projects/thanos-kit/thanos-kit inspect --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}'
+      # ~/Projects/thanos-kit/thanos-kit dump --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}' --data-dir=/tmp/dump ULID
       - |
         --objstore.config=type: FILESYSTEM
         config:
           directory: "/s3"
+    environment:
+#      - GODEBUG=madvdontneed=1
+      - GOGC=50
     volumes:
       - ./cfg/hashrings.json:/cfg/hashrings.json
+      - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-receive-0:/data
       - ./data/s3:/s3
     user: '65534'
     ports:
       - 10900:10902  # pprof
 
-#  thanos-receive-1:
-#    container_name: thanos-receive-1
-#    hostname: thanos-receive-1
-#    image: thanos #io/thanos:v0.15.0
-#    command:
-#      - receive
-#      - --tsdb.path=/data
-#      - --tsdb.retention=1d
-#      - --tsdb.min-block-duration=30m
-#      - --tsdb.max-block-duration=30m
-#      - --label=replica="thanos-receive-1"
-#      - --receive.local-endpoint=thanos-receive-1:10901
-#      - --receive.hashrings-file=/cfg/hashrings.json
-#      - --receive.replication-factor=2
-#      - --receive.extract-tenant
-#      - --receive.tenant-label-name=prometheus
-#      - --receive.extract-label=stage
-#      - |
-#        --objstore.config=type: FILESYSTEM
-#        config:
-#          directory: "/s3"
-#    volumes:
-#      - ./cfg/hashrings.json:/cfg/hashrings.json
-#      - ./data/thanos-receive-1:/data
-#      - ./data/s3:/s3
-#    user: '65534'
+  thanos-receive-1:
+    container_name: thanos-receive-1
+    hostname: thanos-receive-1
+    image: thanos #sepa/thanos:v0.20.0
+    command:
+      - receive
+      - --tsdb.path=/data
+      - --tsdb.retention=1d
+      - --tsdb.allow-overlapping-blocks
+      - --tsdb.min-block-duration=5m
+      - --tsdb.max-block-duration=5m
+      - --label=replica="thanos-receive-1"
+      - --receive.local-endpoint=thanos-receive-1:10901
+      - --receive.hashrings-file=/cfg/hashrings.json
+      - --receive.replication-factor=2
+      - --receive.tenant-label-name=prometheus
+      - --receive.extract-labels-config-file=/cfg/extract.yml
+      - --log.level=debug
+      - |
+        --objstore.config=type: FILESYSTEM
+        config:
+          directory: "/s3"
+    environment:
+      - GODEBUG=madvdontneed=1
+#      - GOGC=50
+    volumes:
+      - ./cfg/hashrings.json:/cfg/hashrings.json
+      - ./cfg/extract.yml:/cfg/extract.yml
+      - ./data/thanos-receive-1:/data
+      - ./data/s3:/s3
+    user: '65534'
+
+  nginx:
+    container_name: nginx
+    hostname: nginx
+    image: nginx:stable
+    volumes:
+      - ./cfg/nginx.conf:/etc/nginx/nginx.conf
+      - ./cfg/users.htpasswd:/cfg/users.htpasswd
+    ports:
+      - 8080:8080
+
+  thanos-front:
+    container_name: thanos-front
+    hostname: thanos-front
+    image: thanos #sepa/thanos:v0.20.0
+    command:
+      - receive
+      - --tsdb.path=/data
+      - --label=replica="thanos-front"
+      - --receive.local-endpoint=thanos-front:10901
+      - --receive.hashrings-file=/cfg/hashrings.json
+      - --receive.replication-factor=2
+      - --receive.tenant-label-name=prometheus
+#      - --receive.extract-labels-config-file=/cfg/extract.yml
+      - |
+        --receive.extract-labels-config=defaultExternalLabels: []
+      - --log.level=debug
+    volumes:
+      - ./cfg/hashrings.json:/cfg/hashrings.json
+      - ./cfg/extract.yml:/cfg/extract.yml
+      - ./data/thanos-front:/data
+    user: '65534'
 
   thanos-query:
     container_name: thanos-query
     hostname: thanos-query
-    image: thanosio/thanos:v0.15.0
+    image: thanosio/thanos:v0.20.1
     command:
       - query
       - --query.auto-downsampling
@@ -68,7 +112,7 @@ services:
       - --query.replica-label=replica
       - --query.replica-label=tenant_id
       - --store=dns+thanos-receive-0:10901
-#      - --store=dns+thanos-receive-1:10901
+      - --store=dns+thanos-receive-1:10901
     user: '65534'
     ports:
     - 10902:10902
@@ -112,7 +156,7 @@ services:
   grafana:
     container_name: grafana
     hostname: grafana
-    image: grafana/grafana:7.1.0
+    image: grafana/grafana:7.5.2
     entrypoint:
       - /usr/share/grafana/bin/grafana-server
       - --homepath=/usr/share/grafana
@@ -134,27 +178,27 @@ services:
     ports:
       - '9100:9100'
 
-  avalanche-1:
-    container_name: avalanche-1
-    hostname: avalanche-1
-    image: quay.io/freshtracks.io/avalanche:latest
-    command:
-      - --metric-count=3000
-      - --series-interval=3600
-      - --metric-interval=7200
-  avalanche-2:
-    container_name: avalanche-2
-    hostname: avalanche-2
-    image: quay.io/freshtracks.io/avalanche:latest
-    command:
-      - --metric-count=3000
-      - --series-interval=3600
-      - --metric-interval=7200
-  avalanche-3:
-    container_name: avalanche-3
-    hostname: avalanche-3
-    image: quay.io/freshtracks.io/avalanche:latest
-    command:
-      - --metric-count=3000
-      - --series-interval=3600
-      - --metric-interval=7200
+#  avalanche-1:
+#    container_name: avalanche-1
+#    hostname: avalanche-1
+#    image: quay.io/freshtracks.io/avalanche:latest
+#    command:
+#      - --metric-count=3000
+#      - --series-interval=3600
+#      - --metric-interval=7200
+#  avalanche-2:
+#    container_name: avalanche-2
+#    hostname: avalanche-2
+#    image: quay.io/freshtracks.io/avalanche:latest
+#    command:
+#      - --metric-count=3000
+#      - --series-interval=3600
+#      - --metric-interval=7200
+#  avalanche-3:
+#    container_name: avalanche-3
+#    hostname: avalanche-3
+#    image: quay.io/freshtracks.io/avalanche:latest
+#    command:
+#      - --metric-count=3000
+#      - --series-interval=3600
+#      - --metric-interval=7200

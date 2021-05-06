@@ -1,0 +1,6 @@
+defaultExternalLabels:
+  - site
+  - location
+tenantExternalLabels:
+  compose-test-1:
+    - location

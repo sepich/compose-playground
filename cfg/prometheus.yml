@@ -3,10 +3,14 @@ global:
   evaluation_interval: 1m
   external_labels:
     prometheus: compose-test-1
-    stage: dev
+    location: eu-west-1
+    site: prod
 
 remote_write:
-  - url: http://thanos-receive-0:19291/api/v1/receive
+  - url: http://nginx:8080/api/v1/receive
+    basic_auth:
+      username: foo
+      password: bar
     queue_config:
       max_shards: 10  #1000
       capacity: 5000  #500
@@ -17,13 +21,20 @@ scrape_configs:
   - job_name: prometheus_scrape
     static_configs:
       - targets: [localhost:9090]
+        labels:
+          site: prom
 
   - job_name: thanos-receive
     static_configs:
       - targets:
+        - thanos-front:10902
         - thanos-receive-0:10902
         - thanos-receive-1:10902
+        labels:
+          site: than
 
   - job_name: node-exporter
     static_configs:
       - targets: [node-exporter:9100]
+        labels:
+          site: node

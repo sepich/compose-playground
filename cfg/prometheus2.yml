@@ -3,10 +3,14 @@ global:
   evaluation_interval: 1m
   external_labels:
     prometheus: compose-test-2
-    stage: dev
+    location: eu-west-2
+    site: prod-2
 
 remote_write:
-  - url: http://thanos-receive-0:19291/api/v1/receive
+  - url: http://nginx:8080/api/v1/receive
+    basic_auth:
+      username: foo
+      password: bar
     queue_config:
       max_shards: 10  #1000
       capacity: 5000  #500
@@ -18,16 +22,16 @@ scrape_configs:
     static_configs:
       - targets: [localhost:9090]
 
-  - job_name: avalanche
-    static_configs:
-      - targets:
-          - avalanche-1:9001
-          - avalanche-2:9001
-          - avalanche-3:9001
-
-  - job_name: avalanche2
-    static_configs:
-      - targets:
-          - avalanche-1:9001
-          - avalanche-2:9001
-          - avalanche-3:9001
+#  - job_name: avalanche
+#    static_configs:
+#      - targets:
+#          - avalanche-1:9001
+#          - avalanche-2:9001
+#          - avalanche-3:9001
+#
+#  - job_name: avalanche2
+#    static_configs:
+#      - targets:
+#          - avalanche-1:9001
+#          - avalanche-2:9001
+#          - avalanche-3:9001
