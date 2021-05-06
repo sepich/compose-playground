@@ -4,7 +4,7 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanos #sepa/thanos:v0.20.0
+    image: thanos #sepa/thanos:v0.20.1
     command:
       - receive
       - --tsdb.path=/data
@@ -40,7 +40,7 @@ services:
   thanos-receive-1:
     container_name: thanos-receive-1
     hostname: thanos-receive-1
-    image: thanos #sepa/thanos:v0.20.0
+    image: thanos #sepa/thanos:v0.20.1
     command:
       - receive
       - --tsdb.path=/data
@@ -82,7 +82,7 @@ services:
   thanos-front:
     container_name: thanos-front
     hostname: thanos-front
-    image: thanos #sepa/thanos:v0.20.0
+    image: thanos #sepa/thanos:v0.20.1
     command:
       - receive
       - --tsdb.path=/data
@@ -91,9 +91,9 @@ services:
       - --receive.hashrings-file=/cfg/hashrings.json
       - --receive.replication-factor=2
       - --receive.tenant-label-name=prometheus
-#      - --receive.extract-labels-config-file=/cfg/extract.yml
-      - |
-        --receive.extract-labels-config=defaultExternalLabels: []
+      - --receive.extract-labels-config-file=/cfg/extract.yml
+#      - |
+#        --receive.extract-labels-config=defaultExternalLabels: []
       - --log.level=debug
     volumes:
       - ./cfg/hashrings.json:/cfg/hashrings.json

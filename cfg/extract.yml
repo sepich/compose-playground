@@ -4,3 +4,7 @@ defaultExternalLabels:
 tenantExternalLabels:
   compose-test-1:
     - location
+# force tenantLabel prefix based on X-Forwarded-User header
+tenantLabelPrefixes:
+  foo: compose-test
+  bar: deny
