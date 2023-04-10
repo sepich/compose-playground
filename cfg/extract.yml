@@ -1,10 +1,13 @@
+# IngestorOnly
 defaultExternalLabels:
   - site
   - location
 tenantExternalLabels:
   compose-test-1:
     - location
+
+# RouterOnly
 # force tenantLabel prefix based on X-Forwarded-User header
 tenantLabelPrefixes:
   foo: compose-test
-  bar: deny
+#  bar: deny

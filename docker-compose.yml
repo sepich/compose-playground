@@ -4,7 +4,7 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanos #sepa/thanos:v0.20.1
+    image: thanos #sepa/thanos:v0.27.0
     command:
       - receive
       - --tsdb.path=/data
@@ -12,13 +12,14 @@ services:
       - --tsdb.allow-overlapping-blocks
       - --tsdb.min-block-duration=5m
       - --tsdb.max-block-duration=5m
+      #- --tsdb.out-of-order.time-window=15m
+      #- --tsdb.memory-snapshot-on-shutdown
       - --label=replica="thanos-receive-0"
       - --receive.local-endpoint=thanos-receive-0:10901
-      - --receive.hashrings-file=/cfg/hashrings.json
-      - --receive.replication-factor=2
       - --receive.tenant-label-name=prometheus
       - --receive.extract-labels-config-file=/cfg/extract.yml
-      - --log.level=debug
+      #- --writer.intern
+      #- -log.level=debug
       # ~/Projects/thanos-kit/thanos-kit inspect --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}'
       # ~/Projects/thanos-kit/thanos-kit dump --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}' --data-dir=/tmp/dump ULID
       - |
@@ -29,7 +30,6 @@ services:
 #      - GODEBUG=madvdontneed=1
       - GOGC=50
     volumes:
-      - ./cfg/hashrings.json:/cfg/hashrings.json
       - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-receive-0:/data
       - ./data/s3:/s3
@@ -40,7 +40,7 @@ services:
   thanos-receive-1:
     container_name: thanos-receive-1
     hostname: thanos-receive-1
-    image: thanos #sepa/thanos:v0.20.1
+    image: thanos #sepa/thanos:v0.27.0
     command:
       - receive
       - --tsdb.path=/data
@@ -48,13 +48,14 @@ services:
       - --tsdb.allow-overlapping-blocks
       - --tsdb.min-block-duration=5m
       - --tsdb.max-block-duration=5m
+#      - --tsdb.out-of-order.time-window=15m
+#      - --tsdb.memory-snapshot-on-shutdown
       - --label=replica="thanos-receive-1"
       - --receive.local-endpoint=thanos-receive-1:10901
-      - --receive.hashrings-file=/cfg/hashrings.json
-      - --receive.replication-factor=2
       - --receive.tenant-label-name=prometheus
       - --receive.extract-labels-config-file=/cfg/extract.yml
-      - --log.level=debug
+      - --writer.intern
+#      - --log.level=debug
       - |
         --objstore.config=type: FILESYSTEM
         config:
@@ -63,7 +64,6 @@ services:
       - GODEBUG=madvdontneed=1
 #      - GOGC=50
     volumes:
-      - ./cfg/hashrings.json:/cfg/hashrings.json
       - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-receive-1:/data
       - ./data/s3:/s3
@@ -82,15 +82,18 @@ services:
   thanos-front:
     container_name: thanos-front
     hostname: thanos-front
-    image: thanos #sepa/thanos:v0.20.1
+    image: thanos #sepa/thanos:v0.27.0
     command:
       - receive
       - --tsdb.path=/data
       - --label=replica="thanos-front"
-      - --receive.local-endpoint=thanos-front:10901
+#      - --receive.local-endpoint=thanos-front:10901 do not store
       - --receive.hashrings-file=/cfg/hashrings.json
       - --receive.replication-factor=2
+      - --receive.hashrings-algorithm=ketama
+      - --receive.grpc-compression=snappy # default?
       - --receive.tenant-label-name=prometheus
+      - --receive.tenant-header=X-Forwarded-User
       - --receive.extract-labels-config-file=/cfg/extract.yml
 #      - |
 #        --receive.extract-labels-config=defaultExternalLabels: []
@@ -104,18 +107,44 @@ services:
   thanos-query:
     container_name: thanos-query
     hostname: thanos-query
-    image: thanosio/thanos:v0.20.1
+    image: thanosio/thanos:v0.31.0
     command:
       - query
       - --query.auto-downsampling
       - --query.partial-response
       - --query.replica-label=replica
       - --query.replica-label=tenant_id
+      - --query.conn-metric.label=store_type #external_labels,store_type : thanos_store_nodes_grpc_connections
       - --store=dns+thanos-receive-0:10901
       - --store=dns+thanos-receive-1:10901
+#      - --store=dns+thanos-rule:10901
     user: '65534'
     ports:
     - 10902:10902
+
+#  thanos-rule:
+#    container_name: thanos-rule
+#    hostname: thanos-rule
+#    image: thanosio/thanos:v0.31.0-rc0
+#    command:
+#      - rule
+#      - --rule-file=/rules/*.yml
+#      - --data-dir=/tmp  # write err to /data
+#      - --eval-interval=1m
+#      - --query=thanos-query:10902
+##      - --alertmanagers.url=dns+http://alertmanager:9093/alertmanager
+#      - --alert.query-url=http://localhost:10902
+#      - --alert.label-drop=replica
+#      - --label=replica="thanos-rule"
+#      - --log.level=debug
+#      # https://thanos.io/tip/proposals-done/202005-scalable-rule-storage.md/
+#      - |
+#        --remote-write.config=remote_write: [{url: http://thanos-front:19291/api/v1/receive}]
+#    volumes:
+#      - ./cfg/rules.yml:/rules/rules.yml
+#    user: '65534'
+#    ports:
+#      - 10903:10902
 
   prometheus:
     container_name: prometheus
@@ -156,7 +185,7 @@ services:
   grafana:
     container_name: grafana
     hostname: grafana
-    image: grafana/grafana:7.5.2
+    image: grafana/grafana:8.5.15
     entrypoint:
       - /usr/share/grafana/bin/grafana-server
       - --homepath=/usr/share/grafana
