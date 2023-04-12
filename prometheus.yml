@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 1s
+scrape_configs:
+  - job_name: own
+    static_configs:
+      - targets:
+          - prometheus:9090
+          - mimir:8080
+
+  - job_name: duplicates
+    static_configs:
+      - targets:
+          - nginx:80
+
+remote_write:
+  - url: http://mimir:8080/api/v1/push

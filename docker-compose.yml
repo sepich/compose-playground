@@ -1,58 +1,33 @@
 version: '2'
 services:
 
-  # Go Carbon (Carbon replacement)
-  # Takes care of writing metrics to database and data retention
-  go-carbon:
-    container_name: go-carbon
-    hostname: go-carbon
-    image: go-carbon
-    build:
-      dockerfile: go-carbon.dockerfile
-      context: .
-    command: -config=/etc/go-carbon/go-carbon.conf
-    volumes:
-      - ./configs:/etc/go-carbon
-      - ./whisper:/data/graphite/whisper/
-
-  # Graphite API provides API for reading metrics
-  carbonapi:
-    container_name: carbonapi
-    hostname: carbonapi
-    image: carbonapi
-    build:
-      dockerfile: carbonapi.dockerfile
-      context: .
-    command: -z=http://go-carbon:8080 -graphite=go-carbon:2003 -stdout
-    depends_on:
-      - go-carbon
-
-  # Grafana metrics dashboard
-  grafana:
-    container_name: grafana
-    image: grafana/grafana
+  mimir:
+    container_name: mimir
+    hostname: mimir
+    image: grafana/mimir:2.7.1
+    command:
+      - -auth.multitenancy-enabled=false
+      - -ingester.ring.replication-factor=1
     ports:
-      - "3000:3000"
-    volumes:
-      - ./configs:/etc/grafana
-      - ./grafana:/var/lib/grafana
-      - ./logs:/var/log/grafana
-    depends_on:
-      - carbonapi
+      - '8080:8080'
 
-  # Diamond python metrics collector
-  diamond:
-    image: mateuszm/diamond
-    container_name: diamond
-    hostname: diamond
-    environment:
-      - GRAPHITE_HOST=go-carbon
-      - GRAPHITE_PORT=2003
-      - PATH_PREFIX=server
-      - INTERVAL=5
+  prometheus:
+    container_name: prometheus
+    hostname: prometheus
+    image: prom/prometheus:v2.43.0
+    command:
+      - --config.file=/cfg/prometheus.yml
     volumes:
-      - ./configs:/etc/diamond
-      # pass-trough volumes to collect containters stats from host
-      # - /proc:/host_proc:ro
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - /dev:/dev:ro
+      - ./prometheus.yml:/cfg/prometheus.yml
+    ports:
+      - '9090:9090'
+
+  nginx:
+    container_name: nginx
+    hostname: nginx
+    image: nginx
+    volumes:
+      - ./metrics:/usr/share/nginx/html/metrics
+      - ./metrics2:/usr/share/nginx/html/metrics2
+    ports:
+      - '8081:80'
