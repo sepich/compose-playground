@@ -1,0 +1,40 @@
+# https://github.com/open-telemetry/opentelemetry-proto/blob/main/docs/specification.md#otlphttp
+# https://github.com/open-telemetry/opentelemetry-proto/blob/main/examples/metrics.json
+# https://github.com/open-telemetry/opentelemetry-proto/blob/main/opentelemetry/proto/metrics/v1/metrics.proto
+# https://pkg.go.dev/go.opentelemetry.io/collector@v0.29.0/internal/data/protogen/metrics/v1#InstrumentationLibraryMetrics
+POST localhost:4318/v1/metrics
+Content-Type: application/json
+
+{
+  "resourceMetrics": [{
+      "resource": {
+        "attributes": [{
+            "key": "service.name",
+            "value": {
+              "stringValue": "my.service"
+            }
+          }]
+      },
+      "scopeMetrics": [{
+          "metrics": [{
+              "name": "my.gauge",
+              "unit": "1",
+              "description": "I'm a Gauge",
+              "gauge": {
+                "dataPoints": [{
+                    "asDouble": 1,
+                    "timeUnixNano": 1685374193000000000,
+                    "attributes": [{
+                        "key": "my.gauge.attr",
+                        "value": {
+                          "stringValue": "some value"
+                        }
+                    }]
+                }]
+              }
+          }]
+      }]
+  }]
+}
+###
+`service.name` would be also "job" in prometheus

@@ -1,58 +1,33 @@
-version: '2'
+version: '2.4'
 services:
 
-  # Go Carbon (Carbon replacement)
-  # Takes care of writing metrics to database and data retention
-  go-carbon:
-    container_name: go-carbon
-    hostname: go-carbon
-    image: go-carbon
-    build:
-      dockerfile: go-carbon.dockerfile
-      context: .
-    command: -config=/etc/go-carbon/go-carbon.conf
+  prometheus:
+    container_name: prometheus
+    hostname: prometheus
+    image: prom/prometheus:v2.44.0
+    command:
+      - --web.enable-lifecycle
+      - --web.enable-remote-write-receiver #/api/v1/write
+      - --config.file=/cfg/prometheus.yml
+      - --storage.tsdb.path=/data
+      - --storage.tsdb.retention.time=15m
+      - --storage.tsdb.min-block-duration=15m
+      - --storage.tsdb.max-block-duration=15m
+      - --enable-feature=memory-snapshot-on-shutdown
     volumes:
-      - ./configs:/etc/go-carbon
-      - ./whisper:/data/graphite/whisper/
-
-  # Graphite API provides API for reading metrics
-  carbonapi:
-    container_name: carbonapi
-    hostname: carbonapi
-    image: carbonapi
-    build:
-      dockerfile: carbonapi.dockerfile
-      context: .
-    command: -z=http://go-carbon:8080 -graphite=go-carbon:2003 -stdout
-    depends_on:
-      - go-carbon
-
-  # Grafana metrics dashboard
-  grafana:
-    container_name: grafana
-    image: grafana/grafana
+      - ./cfg/prometheus.yml:/cfg/prometheus.yml
+      - ./data/prometheus:/data
+    user: '65534'
     ports:
-      - "3000:3000"
-    volumes:
-      - ./configs:/etc/grafana
-      - ./grafana:/var/lib/grafana
-      - ./logs:/var/log/grafana
-    depends_on:
-      - carbonapi
+      - '9090:9090'
 
-  # Diamond python metrics collector
-  diamond:
-    image: mateuszm/diamond
-    container_name: diamond
-    hostname: diamond
-    environment:
-      - GRAPHITE_HOST=go-carbon
-      - GRAPHITE_PORT=2003
-      - PATH_PREFIX=server
-      - INTERVAL=5
+  otel:
+    container_name: otel
+    hostname: otel
+    image: otel/opentelemetry-collector-contrib:0.78.0
+    command:
+      - --config=/cfg/otel.yml
     volumes:
-      - ./configs:/etc/diamond
-      # pass-trough volumes to collect containters stats from host
-      # - /proc:/host_proc:ro
-      # - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - /dev:/dev:ro
+      - ./cfg/otel.yml:/cfg/otel.yml
+    ports:
+      - 4318:4318
