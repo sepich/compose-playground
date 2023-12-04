@@ -18,4 +18,4 @@ groups:
           severity: warning
         annotations:
           summary: "Test alert"
-          description: "Test alert"
+          description: "descr"

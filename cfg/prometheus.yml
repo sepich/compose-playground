@@ -16,6 +16,16 @@ remote_write:
       capacity: 5000  #500
       max_samples_per_send: 10000  #100
 
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - webhook.site
+      path_prefix: /2945e7c6-b120-4294-a4d7-8d5c23580320
+      scheme: https
+rule_files:
+  - /cfg/rules.yml
+
 scrape_configs:
 
   - job_name: prometheus_scrape

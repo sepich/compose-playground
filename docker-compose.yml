@@ -4,9 +4,12 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanos #sepa/thanos:v0.27.0
+    image: sepa/thanos:v0.27.0
     command:
       - receive
+      - --grpc-server-tls-client-ca=/tls/ca.crt
+      - --grpc-server-tls-cert=/tls/tls.crt
+      - --grpc-server-tls-key=/tls/tls.key
       - --tsdb.path=/data
       - --tsdb.retention=1d
       - --tsdb.allow-overlapping-blocks
@@ -18,8 +21,8 @@ services:
       - --receive.local-endpoint=thanos-receive-0:10901
       - --receive.tenant-label-name=prometheus
       - --receive.extract-labels-config-file=/cfg/extract.yml
-      #- --writer.intern
-      #- -log.level=debug
+      # - --writer.intern
+      # - --log.level=debug
       # ~/Projects/thanos-kit/thanos-kit inspect --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}'
       # ~/Projects/thanos-kit/thanos-kit dump --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}' --data-dir=/tmp/dump ULID
       - |
@@ -33,6 +36,7 @@ services:
       - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-receive-0:/data
       - ./data/s3:/s3
+      - ./tls:/tls
     user: '65534'
     ports:
       - 10900:10902  # pprof
@@ -40,9 +44,12 @@ services:
   thanos-receive-1:
     container_name: thanos-receive-1
     hostname: thanos-receive-1
-    image: thanos #sepa/thanos:v0.27.0
+    image: sepa/thanos:v0.27.0
     command:
       - receive
+      - --grpc-server-tls-client-ca=/tls/ca.crt
+      - --grpc-server-tls-cert=/tls/tls.crt
+      - --grpc-server-tls-key=/tls/tls.key
       - --tsdb.path=/data
       - --tsdb.retention=1d
       - --tsdb.allow-overlapping-blocks
@@ -54,7 +61,6 @@ services:
       - --receive.local-endpoint=thanos-receive-1:10901
       - --receive.tenant-label-name=prometheus
       - --receive.extract-labels-config-file=/cfg/extract.yml
-      - --writer.intern
 #      - --log.level=debug
       - |
         --objstore.config=type: FILESYSTEM
@@ -67,6 +73,7 @@ services:
       - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-receive-1:/data
       - ./data/s3:/s3
+      - ./tls:/tls
     user: '65534'
 
   nginx:
@@ -82,9 +89,14 @@ services:
   thanos-front:
     container_name: thanos-front
     hostname: thanos-front
-    image: thanos #sepa/thanos:v0.27.0
+    image: sepa/thanos:v0.32.0-dev
     command:
       - receive
+      # do not set ca to skip validation for 'receive' hostname=certCN
+      - --grpc-server-tls-cert=/tls/tls.crt
+      - --grpc-server-tls-key=/tls/tls.key
+      - --remote-write.client-tls-cert=/tls/tls.crt
+      - --remote-write.client-tls-key=/tls/tls.key
       - --tsdb.path=/data
       - --label=replica="thanos-front"
 #      - --receive.local-endpoint=thanos-front:10901 do not store
@@ -102,14 +114,19 @@ services:
       - ./cfg/hashrings.json:/cfg/hashrings.json
       - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-front:/data
+      - ./tls:/tls
     user: '65534'
 
   thanos-query:
     container_name: thanos-query
     hostname: thanos-query
-    image: thanosio/thanos:v0.31.0
+    image: thanosio/thanos:v0.32.2
     command:
       - query
+      - --grpc-client-tls-secure
+      - --grpc-client-tls-skip-verify # internal endpoints
+      - --grpc-client-tls-cert=/tls/tls.crt
+      - --grpc-client-tls-key=/tls/tls.key
       - --query.auto-downsampling
       - --query.partial-response
       - --query.replica-label=replica
@@ -118,6 +135,8 @@ services:
       - --store=dns+thanos-receive-0:10901
       - --store=dns+thanos-receive-1:10901
 #      - --store=dns+thanos-rule:10901
+    volumes:
+      - ./tls:/tls
     user: '65534'
     ports:
     - 10902:10902
@@ -159,6 +178,7 @@ services:
       - --storage.tsdb.max-block-duration=15m
     volumes:
       - ./cfg/prometheus.yml:/cfg/prometheus.yml
+      - ./cfg/rules.yml:/cfg/rules.yml
       - ./data/prometheus:/data
     user: '65534'
     ports:
