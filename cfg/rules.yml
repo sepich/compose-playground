@@ -9,7 +9,7 @@ groups:
         expr: time()
 
   - name: alerts
-    interval: 15s
+    interval: 1m
     rules:
       - alert: TestAlert
         expr: up == 1

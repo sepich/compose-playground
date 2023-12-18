@@ -11,20 +11,16 @@ remote_write:
     basic_auth:
       username: foo
       password: bar
-    queue_config:
-      max_shards: 10  #1000
-      capacity: 5000  #500
-      max_samples_per_send: 10000  #100
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-            - webhook.site
-      path_prefix: /2945e7c6-b120-4294-a4d7-8d5c23580320
-      scheme: https
-rule_files:
-  - /cfg/rules.yml
+#alerting:
+#  alertmanagers:
+#    - static_configs:
+#        - targets:
+#            - webhook.site
+#      path_prefix: /c4712942-0397-4c3e-9c1f-a5d95f28f36e
+#      scheme: https
+#rule_files:
+#  - /cfg/rules.yml
 
 scrape_configs:
 

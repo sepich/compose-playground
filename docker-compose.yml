@@ -4,47 +4,7 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: sepa/thanos:v0.27.0
-    command:
-      - receive
-      - --grpc-server-tls-client-ca=/tls/ca.crt
-      - --grpc-server-tls-cert=/tls/tls.crt
-      - --grpc-server-tls-key=/tls/tls.key
-      - --tsdb.path=/data
-      - --tsdb.retention=1d
-      - --tsdb.allow-overlapping-blocks
-      - --tsdb.min-block-duration=5m
-      - --tsdb.max-block-duration=5m
-      #- --tsdb.out-of-order.time-window=15m
-      #- --tsdb.memory-snapshot-on-shutdown
-      - --label=replica="thanos-receive-0"
-      - --receive.local-endpoint=thanos-receive-0:10901
-      - --receive.tenant-label-name=prometheus
-      - --receive.extract-labels-config-file=/cfg/extract.yml
-      # - --writer.intern
-      # - --log.level=debug
-      # ~/Projects/thanos-kit/thanos-kit inspect --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}'
-      # ~/Projects/thanos-kit/thanos-kit dump --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}' --data-dir=/tmp/dump ULID
-      - |
-        --objstore.config=type: FILESYSTEM
-        config:
-          directory: "/s3"
-    environment:
-#      - GODEBUG=madvdontneed=1
-      - GOGC=50
-    volumes:
-      - ./cfg/extract.yml:/cfg/extract.yml
-      - ./data/thanos-receive-0:/data
-      - ./data/s3:/s3
-      - ./tls:/tls
-    user: '65534'
-    ports:
-      - 10900:10902  # pprof
-
-  thanos-receive-1:
-    container_name: thanos-receive-1
-    hostname: thanos-receive-1
-    image: sepa/thanos:v0.27.0
+    image: thanosio/thanos:v0.32.5
     command:
       - receive
       - --grpc-server-tls-client-ca=/tls/ca.crt
@@ -56,11 +16,47 @@ services:
       - --tsdb.min-block-duration=5m
       - --tsdb.max-block-duration=5m
 #      - --tsdb.out-of-order.time-window=15m
-#      - --tsdb.memory-snapshot-on-shutdown
+      - --tsdb.memory-snapshot-on-shutdown
+      - --label=replica="thanos-receive-0"
+      - --receive.local-endpoint=thanos-receive-0:10901
+      - --receive.tenant-label-name=prometheus
+      # - --writer.intern
+      # - --log.level=debug
+      # ~/Projects/thanos-kit/thanos-kit inspect --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}}'
+      - |
+        --objstore.config=type: FILESYSTEM
+        config:
+          directory: "/s3"
+    environment:
+#      - GODEBUG=madvdontneed=1
+      - GOGC=50
+    volumes:
+      - ./data/thanos-receive-0:/data
+      - ./data/s3:/s3
+      - ./tls:/tls
+    user: '65534'
+    ports:
+      - 10900:10902  # pprof
+
+  thanos-receive-1:
+    container_name: thanos-receive-1
+    hostname: thanos-receive-1
+    image: thanosio/thanos:v0.32.5
+    command:
+      - receive
+      - --grpc-server-tls-client-ca=/tls/ca.crt
+      - --grpc-server-tls-cert=/tls/tls.crt
+      - --grpc-server-tls-key=/tls/tls.key
+      - --tsdb.path=/data
+      - --tsdb.retention=1d
+      - --tsdb.allow-overlapping-blocks
+      - --tsdb.min-block-duration=5m
+      - --tsdb.max-block-duration=5m
+#      - --tsdb.out-of-order.time-window=15m
+      - --tsdb.memory-snapshot-on-shutdown
       - --label=replica="thanos-receive-1"
       - --receive.local-endpoint=thanos-receive-1:10901
       - --receive.tenant-label-name=prometheus
-      - --receive.extract-labels-config-file=/cfg/extract.yml
 #      - --log.level=debug
       - |
         --objstore.config=type: FILESYSTEM
@@ -70,7 +66,6 @@ services:
       - GODEBUG=madvdontneed=1
 #      - GOGC=50
     volumes:
-      - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-receive-1:/data
       - ./data/s3:/s3
       - ./tls:/tls
@@ -89,7 +84,7 @@ services:
   thanos-front:
     container_name: thanos-front
     hostname: thanos-front
-    image: sepa/thanos:v0.32.0-dev
+    image: sepa/thanos:v0.32.5
     command:
       - receive
       # do not set ca to skip validation for 'receive' hostname=certCN
@@ -99,28 +94,62 @@ services:
       - --remote-write.client-tls-key=/tls/tls.key
       - --tsdb.path=/data
       - --label=replica="thanos-front"
-#      - --receive.local-endpoint=thanos-front:10901 do not store
       - --receive.hashrings-file=/cfg/hashrings.json
       - --receive.replication-factor=2
       - --receive.hashrings-algorithm=ketama
-      - --receive.grpc-compression=snappy # default?
       - --receive.tenant-label-name=prometheus
       - --receive.tenant-header=X-Forwarded-User
-      - --receive.extract-labels-config-file=/cfg/extract.yml
-#      - |
-#        --receive.extract-labels-config=defaultExternalLabels: []
+      - |
+        --receive.relabel-config=
+        - source_labels: [__meta_tenant_id, prometheus]
+          regex: (foo;compose-test-1|bar;compose-test-2)
+          action: keep
+        - source_labels: [prometheus]
+          target_label: __meta_tenant_id
       - --log.level=debug
+      #--receive.relabel-config
     volumes:
       - ./cfg/hashrings.json:/cfg/hashrings.json
-      - ./cfg/extract.yml:/cfg/extract.yml
       - ./data/thanos-front:/data
       - ./tls:/tls
     user: '65534'
 
+#  thanos-kit:
+#    container_name: thanos-kit
+#    hostname: thanos-kit
+#    image: thanos-kit
+#    command:
+#      - unwrap
+#      - --data-dir=/data
+#      - --wait-interval=1m
+#      - |
+#        --objstore.config=type: FILESYSTEM
+#        config:
+#          directory: "/s3"
+#      - |
+#        --relabel-config=
+#        - target_label: __meta_ext_labels
+#          replacement: prometheus;location
+#        - source_labels: [prometheus]
+#          regex: compose-test-2
+#          target_label: __meta_ext_labels
+#          replacement: prometheus;location;site
+#      - |
+#        --dst.config=type: FILESYSTEM
+#        prefix: done
+#        config:
+#          directory: "/s3"
+#      - --log.level=debug
+#      # ~/Projects/thanos-kit/thanos-kit dump --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}, prefix: done}' --data-dir=data/tmp ULID
+#    volumes:
+#      - ./data/thanos-kit:/data
+#      - ./data/s3:/s3
+#    user: '65534'
+
   thanos-query:
     container_name: thanos-query
     hostname: thanos-query
-    image: thanosio/thanos:v0.32.2
+    image: thanosio/thanos:v0.32.5
     command:
       - query
       - --grpc-client-tls-secure
