@@ -1,29 +1,13 @@
 global:
   scrape_interval: 5s
   evaluation_interval: 1m
-  external_labels:
-    prometheus: compose-test-1
-    location: eu-west-1
-    site: prod
 
 remote_write:
-  - url: http://nginx:8080/api/v1/receive
-    basic_auth:
-      username: foo
-      password: bar
-
-#alerting:
-#  alertmanagers:
-#    - static_configs:
-#        - targets:
-#            - webhook.site
-#      path_prefix: /c4712942-0397-4c3e-9c1f-a5d95f28f36e
-#      scheme: https
-#rule_files:
-#  - /cfg/rules.yml
+  - url: http://thanos-front:19291/api/v1/receive
+    headers:
+      THANOS-TENANT: a
 
 scrape_configs:
-
   - job_name: prometheus_scrape
     static_configs:
       - targets: [localhost:9090]

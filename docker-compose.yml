@@ -4,12 +4,9 @@ services:
   thanos-receive-0:
     container_name: thanos-receive-0
     hostname: thanos-receive-0
-    image: thanosio/thanos:v0.32.5
+    image: thanosio/thanos:v0.34.0-rc.1
     command:
       - receive
-      - --grpc-server-tls-client-ca=/tls/ca.crt
-      - --grpc-server-tls-cert=/tls/tls.crt
-      - --grpc-server-tls-key=/tls/tls.key
       - --tsdb.path=/data
       - --tsdb.retention=1d
       - --tsdb.allow-overlapping-blocks
@@ -27,13 +24,9 @@ services:
         --objstore.config=type: FILESYSTEM
         config:
           directory: "/s3"
-    environment:
-#      - GODEBUG=madvdontneed=1
-      - GOGC=50
     volumes:
       - ./data/thanos-receive-0:/data
       - ./data/s3:/s3
-      - ./tls:/tls
     user: '65534'
     ports:
       - 10900:10902  # pprof
@@ -41,12 +34,9 @@ services:
   thanos-receive-1:
     container_name: thanos-receive-1
     hostname: thanos-receive-1
-    image: thanosio/thanos:v0.32.5
+    image: thanosio/thanos:v0.34.0-rc.1
     command:
       - receive
-      - --grpc-server-tls-client-ca=/tls/ca.crt
-      - --grpc-server-tls-cert=/tls/tls.crt
-      - --grpc-server-tls-key=/tls/tls.key
       - --tsdb.path=/data
       - --tsdb.retention=1d
       - --tsdb.allow-overlapping-blocks
@@ -62,100 +52,36 @@ services:
         --objstore.config=type: FILESYSTEM
         config:
           directory: "/s3"
-    environment:
-      - GODEBUG=madvdontneed=1
-#      - GOGC=50
     volumes:
       - ./data/thanos-receive-1:/data
       - ./data/s3:/s3
-      - ./tls:/tls
     user: '65534'
-
-  nginx:
-    container_name: nginx
-    hostname: nginx
-    image: nginx:stable
-    volumes:
-      - ./cfg/nginx.conf:/etc/nginx/nginx.conf
-      - ./cfg/users.htpasswd:/cfg/users.htpasswd
-    ports:
-      - 8080:8080
 
   thanos-front:
     container_name: thanos-front
     hostname: thanos-front
-    image: sepa/thanos:v0.32.5
+    image: thanosio/thanos:v0.34.0-rc.1
     command:
       - receive
-      # do not set ca to skip validation for 'receive' hostname=certCN
-      - --grpc-server-tls-cert=/tls/tls.crt
-      - --grpc-server-tls-key=/tls/tls.key
-      - --remote-write.client-tls-cert=/tls/tls.crt
-      - --remote-write.client-tls-key=/tls/tls.key
       - --tsdb.path=/data
       - --label=replica="thanos-front"
       - --receive.hashrings-file=/cfg/hashrings.json
       - --receive.replication-factor=2
       - --receive.hashrings-algorithm=ketama
       - --receive.tenant-label-name=prometheus
-      - --receive.tenant-header=X-Forwarded-User
-      - |
-        --receive.relabel-config=
-        - source_labels: [__meta_tenant_id, prometheus]
-          regex: (foo;compose-test-1|bar;compose-test-2)
-          action: keep
-        - source_labels: [prometheus]
-          target_label: __meta_tenant_id
       - --log.level=debug
       #--receive.relabel-config
     volumes:
       - ./cfg/hashrings.json:/cfg/hashrings.json
       - ./data/thanos-front:/data
-      - ./tls:/tls
     user: '65534'
-
-#  thanos-kit:
-#    container_name: thanos-kit
-#    hostname: thanos-kit
-#    image: thanos-kit
-#    command:
-#      - unwrap
-#      - --data-dir=/data
-#      - --wait-interval=1m
-#      - |
-#        --objstore.config=type: FILESYSTEM
-#        config:
-#          directory: "/s3"
-#      - |
-#        --relabel-config=
-#        - target_label: __meta_ext_labels
-#          replacement: prometheus;location
-#        - source_labels: [prometheus]
-#          regex: compose-test-2
-#          target_label: __meta_ext_labels
-#          replacement: prometheus;location;site
-#      - |
-#        --dst.config=type: FILESYSTEM
-#        prefix: done
-#        config:
-#          directory: "/s3"
-#      - --log.level=debug
-#      # ~/Projects/thanos-kit/thanos-kit dump --objstore.config='{type: FILESYSTEM, config: {directory: "data/s3"}, prefix: done}' --data-dir=data/tmp ULID
-#    volumes:
-#      - ./data/thanos-kit:/data
-#      - ./data/s3:/s3
-#    user: '65534'
 
   thanos-query:
     container_name: thanos-query
     hostname: thanos-query
-    image: thanosio/thanos:v0.32.5
+    image: thanosio/thanos:v0.34.0-rc.1
     command:
       - query
-      - --grpc-client-tls-secure
-      - --grpc-client-tls-skip-verify # internal endpoints
-      - --grpc-client-tls-cert=/tls/tls.crt
-      - --grpc-client-tls-key=/tls/tls.key
       - --query.auto-downsampling
       - --query.partial-response
       - --query.replica-label=replica
@@ -164,35 +90,9 @@ services:
       - --store=dns+thanos-receive-0:10901
       - --store=dns+thanos-receive-1:10901
 #      - --store=dns+thanos-rule:10901
-    volumes:
-      - ./tls:/tls
     user: '65534'
     ports:
     - 10902:10902
-
-#  thanos-rule:
-#    container_name: thanos-rule
-#    hostname: thanos-rule
-#    image: thanosio/thanos:v0.31.0-rc0
-#    command:
-#      - rule
-#      - --rule-file=/rules/*.yml
-#      - --data-dir=/tmp  # write err to /data
-#      - --eval-interval=1m
-#      - --query=thanos-query:10902
-##      - --alertmanagers.url=dns+http://alertmanager:9093/alertmanager
-#      - --alert.query-url=http://localhost:10902
-#      - --alert.label-drop=replica
-#      - --label=replica="thanos-rule"
-#      - --log.level=debug
-#      # https://thanos.io/tip/proposals-done/202005-scalable-rule-storage.md/
-#      - |
-#        --remote-write.config=remote_write: [{url: http://thanos-front:19291/api/v1/receive}]
-#    volumes:
-#      - ./cfg/rules.yml:/rules/rules.yml
-#    user: '65534'
-#    ports:
-#      - 10903:10902
 
   prometheus:
     container_name: prometheus
@@ -207,7 +107,6 @@ services:
       - --storage.tsdb.max-block-duration=15m
     volumes:
       - ./cfg/prometheus.yml:/cfg/prometheus.yml
-      - ./cfg/rules.yml:/cfg/rules.yml
       - ./data/prometheus:/data
     user: '65534'
     ports:
@@ -231,22 +130,6 @@ services:
     ports:
     - '9091:9090'
 
-  grafana:
-    container_name: grafana
-    hostname: grafana
-    image: grafana/grafana:8.5.15
-    entrypoint:
-      - /usr/share/grafana/bin/grafana-server
-      - --homepath=/usr/share/grafana
-      - --config=/cfg/grafana.ini
-    volumes:
-      - ./cfg/grafana.ini:/cfg/grafana.ini
-      - ./cfg/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
-      - ./cfg/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
-      - ./cfg/dashboards:/var/lib/grafana/dashboards
-    ports:
-      - '3000:3000'
-
 # targets
   node-exporter:
     container_name: node-exporter
@@ -255,28 +138,3 @@ services:
     # network_mode: host
     ports:
       - '9100:9100'
-
-#  avalanche-1:
-#    container_name: avalanche-1
-#    hostname: avalanche-1
-#    image: quay.io/freshtracks.io/avalanche:latest
-#    command:
-#      - --metric-count=3000
-#      - --series-interval=3600
-#      - --metric-interval=7200
-#  avalanche-2:
-#    container_name: avalanche-2
-#    hostname: avalanche-2
-#    image: quay.io/freshtracks.io/avalanche:latest
-#    command:
-#      - --metric-count=3000
-#      - --series-interval=3600
-#      - --metric-interval=7200
-#  avalanche-3:
-#    container_name: avalanche-3
-#    hostname: avalanche-3
-#    image: quay.io/freshtracks.io/avalanche:latest
-#    command:
-#      - --metric-count=3000
-#      - --series-interval=3600
-#      - --metric-interval=7200

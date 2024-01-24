@@ -1,16 +1,11 @@
 global:
   scrape_interval: 5s
   evaluation_interval: 1m
-  external_labels:
-    prometheus: compose-test-2
-    location: eu-west-2
-    site: prod
 
 remote_write:
-  - url: http://nginx:8080/api/v1/receive
-    basic_auth:
-      username: bar
-      password: bar
+  - url: http://thanos-front:19291/api/v1/receive
+    headers:
+      THANOS-TENANT: b
 
 scrape_configs:
 
