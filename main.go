@@ -25,8 +25,9 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer f.Close()
 
-	buf := make([]byte, 1024)
+	buf := make([]byte, 1024) // read only beginning of the body doesn't work
 	n, err := r.Body.Read(buf)
+	//n, err := io.Copy(f, r.Body)  // read whole body = works
 	log.Printf("read %d bytes", n)
 	if err != nil {
 		log.Printf("error reading request body: %v", err)
@@ -41,7 +42,7 @@ func fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 	//w.Header().Set("Content-Length", "3946") // Not "chunked" encoding works
 	//_, err = w.Write(bytes.Repeat([]byte("a"), 3940)) // work
 	//_, err = w.Write(bytes.Repeat([]byte("a"), 3946)) // doesn't work
-	n, err = w.Write(bytes.Repeat([]byte("a"), 1000000)) // doesn't work
+	_, err = w.Write(bytes.Repeat([]byte("a"), 1000000)) // doesn't work
 
 	if err != nil {
 		log.Printf("failed to write: %v\n", err)
