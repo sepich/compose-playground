@@ -1,51 +1,22 @@
-# Graphite playground
-This is docker-compose folder, enabling you to quickly set-up and play with different components of Graphite monitoring stack.
+# https://github.com/kubernetes/ingress-nginx/issues/12875
 
-#### Components:  
- - [Diamond](https://github.com/python-diamond/Diamond), python daemon that collects system metrics (client sends metrics to graphite)
- - [Go-carbon](https://github.com/lomik/go-carbon), Golang implementation of Graphite/Carbon server (receives and writes metriс to disk)
- - [Carbonapi](https://github.com/dgryski/carbonapi), Golang implementation of Graphite API server (provides REST API for reading metrics for grafana etc)
- - [Grafana](https://grafana.net), web-interface for metrics View/Alert
-
-#### Quick start:
 ```
-git clone https://github.com/sepich/graphite-compose.git
-cd graphite-compose
-docker-compose up -d
-```
-This would create 4 containers, with metrics data stored in newly created `./whisper/` folder. Data is preserved between runs, grafana settings are in `./grafana/`.  
-
-Now login to [http://localhost:3000](http://localhost:3000) as `admin`/`admin` and configure new Data Source of type Graphite with url `http://carbonapi:8080`  
-
-Configs for all 4 containers are mapped from folder `./configs`. Just edit config in question and restart corresponding container:  
-```
-docker-compose restart diamond
-```
-(or you can send signal like `docker kill -s SIGHUP grafana`)  
-When done, cleanup everything:  
-```
-docker-compose stop
-docker-compose rm -f
+$ make reproduce
+./reproduce.sh
+....f
+kubectl -n ingress-nginx logs --tail=5 -l app.kubernetes.io/component=controller
+2025/02/24 11:02:55 [warn] 14047#14047: *1795460 a client request body is buffered to a temporary file /tmp/nginx/client-body/0000006085, client: 127.0.0.1, server: _, request: "PATCH /upload HTTP/1.1", host: "localhost:8080"
+127.0.0.1 - - [24/Feb/2025:11:02:55 +0000] "PATCH /upload HTTP/1.1" 401 3965 "-" "curl/8.7.1" 1036477 0.002 [default-app-8080] [] 10.244.0.28:8080 3959 0.000 401 2dc4fa4f0f2069d41bd345534f6feb74
+2025/02/24 11:02:55 [warn] 14047#14047: *1795462 a client request body is buffered to a temporary file /tmp/nginx/client-body/0000006086, client: 127.0.0.1, server: _, request: "PATCH /upload HTTP/1.1", host: "localhost:8080"
+2025/02/24 11:02:55 [crit] 14047#14047: *1795462 pread() "/tmp/nginx/client-body/0000006086" failed (9: Bad file descriptor) while sending request to upstream, client: 127.0.0.1, server: _, request: "PATCH /upload HTTP/1.1", upstream: "http://10.244.0.28:8080/upload", host: "localhost:8080"
+127.0.0.1 - - [24/Feb/2025:11:02:55 +0000] "PATCH /upload HTTP/1.1" 401 3911 "-" "curl/8.7.1" 1036477 0.504 [default-app-8080] [] 10.244.0.28:8080 3909 0.000 502 8d4ae3aa7d4099a867ac9a9c58cba011
 ```
 
-#### To scale:
-This is minimal number of components, real scalable architecture would be like:  
-https://github.com/lomik/go-carbon/issues/130
-```
-                     |-----------------|
-                     | carbon-relay-ng |
-                     |-----------------|
-                              |
-        |---------------------+---------------------|
-|-----------------|  |-----------------|  |-----------------|
-|    go-carbon    |  |    go-carbon    |  |    go-carbon    |
-| (carbonserver)  |  | (carbonserver)  |  | (carbonserver)  |
-|-----------------|  |-----------------|  |-----------------|
-        |---------------------+---------------------|
-                              |
-                     |-----------------|
-                     |  carbonzipper   |
-                     |    carbonapi    |
-                     |     grafana     |
-                     |-----------------|
-```
+## Steps
+- `make setup` (keep this tab)
+- `make reproduce` (in second tab)
+
+## Modify
+- modify `main.go`
+- `make build` (in second tab)
+- `make reproduce` (in second tab)
